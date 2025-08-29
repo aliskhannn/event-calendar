@@ -23,9 +23,9 @@ type Service struct {
 	eventRepo eventRepo
 }
 
-func New(eventRepo eventRepo) *Service {
+func New(r eventRepo) *Service {
 	return &Service{
-		eventRepo: eventRepo,
+		eventRepo: r,
 	}
 }
 

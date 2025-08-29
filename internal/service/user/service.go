@@ -12,7 +12,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/aliskhannn/calendar-service/internal/model"
-	userRepo "github.com/aliskhannn/calendar-service/internal/repository/user"
+	userrepo "github.com/aliskhannn/calendar-service/internal/repository/user"
 )
 
 var (
@@ -44,7 +44,7 @@ func (s *Service) Register(ctx context.Context, user model.User) (uuid.UUID, err
 	if err == nil {
 		return uuid.Nil, ErrUserAlreadyExists
 	}
-	if !errors.Is(err, userRepo.ErrUserNotFound) {
+	if !errors.Is(err, userrepo.ErrUserNotFound) {
 		return uuid.Nil, fmt.Errorf("get user by email: %w", err)
 	}
 

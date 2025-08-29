@@ -45,7 +45,7 @@ func (c *Config) DatabaseURL() string {
 	)
 }
 
-func MustLoad() *Config {
+func Must() *Config {
 	viper.SetConfigName("config")
 	viper.SetConfigType("yaml")
 	viper.AddConfigPath("./config")
