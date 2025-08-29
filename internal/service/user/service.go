@@ -16,8 +16,6 @@ import (
 )
 
 var (
-	ErrInvalidToken      = errors.New("invalid token")
-	ErrExpiredToken      = errors.New("token had expired")
 	ErrUserAlreadyExists = errors.New("user already exists")
 )
 
@@ -38,7 +36,7 @@ func New(userRepo userRepository, config config.Config) *Service {
 	}
 }
 
-func (s *Service) Register(ctx context.Context, user model.User) (uuid.UUID, error) {
+func (s *Service) Create(ctx context.Context, user model.User) (uuid.UUID, error) {
 	// Check if user already exists.
 	_, err := s.userRepo.GetUserByEmail(ctx, user.Email)
 	if err == nil {
@@ -64,7 +62,7 @@ func (s *Service) Register(ctx context.Context, user model.User) (uuid.UUID, err
 	return id, nil
 }
 
-func (s *Service) Login(ctx context.Context, email, password string) (string, error) {
+func (s *Service) GetByEmail(ctx context.Context, email, password string) (string, error) {
 	user, err := s.userRepo.GetUserByEmail(ctx, email)
 	if err != nil {
 		return "", fmt.Errorf("get user by email: %w", err)
@@ -115,30 +113,3 @@ func generateToken(user *model.User, jwtCfg config.JWT) (string, error) {
 	// Sign the token with a secret key and return.
 	return token.SignedString([]byte(jwtCfg.Secret))
 }
-
-// validateToken verifies a JWT token and returns the claims.
-//func validateToken(tokenStr string) (jwt.MapClaims, error) {
-//	// Parse the token.
-//	token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
-//		// Validate the signing method.
-//		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-//			return nil, ErrInvalidToken
-//		}
-//
-//		return []byte(os.Getenv("JWT_SECRET")), nil
-//	})
-//	if err != nil {
-//		if errors.Is(err, jwt.ErrTokenExpired) {
-//			return nil, ErrExpiredToken
-//		}
-//
-//		return nil, err
-//	}
-//
-//	claims, ok := token.Claims.(jwt.MapClaims)
-//	if !ok || !token.Valid {
-//		return nil, ErrInvalidToken
-//	}
-//
-//	return claims, nil
-//}

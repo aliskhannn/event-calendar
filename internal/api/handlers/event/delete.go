@@ -1,8 +1,10 @@
 package event
 
 import (
+	"errors"
 	"fmt"
 	"github.com/aliskhannn/calendar-service/internal/api/response"
+	eventrepo "github.com/aliskhannn/calendar-service/internal/repository/event"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
@@ -33,6 +35,12 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.service.DeleteEvent(r.Context(), eventID, userID); err != nil {
+		if errors.Is(err, eventrepo.ErrEventNotFound) {
+			h.logger.Info("event not found", zap.String("eventID", eventID.String()))
+			response.Fail(w, http.StatusNotFound, fmt.Errorf("event not found"))
+			return
+		}
+
 		h.logger.Error("failed to delete event",
 			zap.String("event_id", eventID.String()),
 			zap.String("user_id", userID.String()),

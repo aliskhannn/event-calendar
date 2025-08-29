@@ -2,9 +2,11 @@ package event
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/aliskhannn/calendar-service/internal/api/response"
 	"github.com/aliskhannn/calendar-service/internal/model"
+	eventrepo "github.com/aliskhannn/calendar-service/internal/repository/event"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
@@ -35,11 +37,7 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 
 	var req UpdateRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		h.logger.Error("failed to decode request body",
-			zap.String("method", r.Method),
-			zap.String("path", r.URL.Path),
-			zap.Error(err),
-		)
+		h.logger.Error("failed to decode request body", zap.Error(err))
 		response.Fail(w, http.StatusBadRequest, fmt.Errorf("invalid request body"))
 		return
 	}
@@ -59,6 +57,12 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.service.UpdateEvent(r.Context(), event); err != nil {
+		if errors.Is(err, eventrepo.ErrEventNotFound) {
+			h.logger.Info("event not found", zap.String("eventID", eventID.String()))
+			response.Fail(w, http.StatusNotFound, fmt.Errorf("event not found"))
+			return
+		}
+
 		h.logger.Error("unexpected error updating event", zap.Error(err))
 		response.Fail(w, http.StatusInternalServerError, fmt.Errorf("internal server error"))
 		return

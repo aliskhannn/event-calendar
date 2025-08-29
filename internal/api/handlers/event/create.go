@@ -22,11 +22,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	var req CreateRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		h.logger.Error("failed to decode request body",
-			zap.String("method", r.Method),
-			zap.String("path", r.URL.Path),
-			zap.Error(err),
-		)
+		h.logger.Error("failed to decode request body", zap.Error(err))
 		response.Fail(w, http.StatusBadRequest, fmt.Errorf("invalid request body"))
 		return
 	}
