@@ -4,10 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/aliskhannn/calendar-service/internal/model"
+	"time"
+
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"time"
+
+	"github.com/aliskhannn/calendar-service/internal/model"
 )
 
 var (

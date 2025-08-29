@@ -4,10 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/aliskhannn/calendar-service/internal/model"
+
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+
+	"github.com/aliskhannn/calendar-service/internal/model"
 )
 
 var (
@@ -33,7 +35,7 @@ func (r *Repository) CreateUser(ctx context.Context, user model.User) (uuid.UUID
    `
 
 	err := r.db.QueryRow(
-		ctx, query, user.Name, user.Email, user.PasswordHash,
+		ctx, query, user.Name, user.Email, user.Password,
 	).Scan(&user.ID)
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("failed to create user: %w", err)
@@ -55,7 +57,7 @@ func (r *Repository) GetUserByEmail(ctx context.Context, email string) (*model.U
 		&user.ID,
 		&user.Email,
 		&user.Name,
-		&user.PasswordHash,
+		&user.Password,
 		&user.CreatedAt,
 		&user.UpdatedAt,
 	)

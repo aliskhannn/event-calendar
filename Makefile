@@ -4,7 +4,7 @@ test:
 
 # Format Go code using goimports
 format:
-	goimports -local github.com/aliskhannn/order-service -w .
+	goimports -local github.com/aliskhannn/calendar-service -w .
 
 # Run linters: vet + golangci-lint
 lint:
