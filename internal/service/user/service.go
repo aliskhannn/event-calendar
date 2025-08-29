@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
+	"github.com/aliskhannn/calendar-service/internal/config"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -28,11 +28,13 @@ type userRepository interface {
 
 type Service struct {
 	userRepo userRepository
+	config   config.Config
 }
 
-func New(userRepo userRepository) *Service {
+func New(userRepo userRepository, config config.Config) *Service {
 	return &Service{
 		userRepo: userRepo,
+		config:   config,
 	}
 }
 
@@ -74,7 +76,7 @@ func (s *Service) Login(ctx context.Context, email, password string) (string, er
 	}
 
 	// Generate JWT token.
-	token, err := generateToken(user)
+	token, err := generateToken(user, s.config.JWT)
 	if err != nil {
 		return "", fmt.Errorf("generate token: %w", err)
 	}
@@ -95,8 +97,8 @@ func verifyPassword(password, hash string) error {
 }
 
 // generateToken creates a token for user.
-func generateToken(user *model.User) (string, error) {
-	expTime := time.Now().Add(time.Hour * 24)
+func generateToken(user *model.User, jwtCfg config.JWT) (string, error) {
+	expTime := time.Now().Add(jwtCfg.TTL)
 
 	// Create the JWT claims.
 	claims := jwt.MapClaims{
@@ -111,7 +113,7 @@ func generateToken(user *model.User) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
 	// Sign the token with a secret key and return.
-	return token.SignedString(os.Getenv("JWT_SECRET"))
+	return token.SignedString([]byte(jwtCfg.Secret))
 }
 
 // validateToken verifies a JWT token and returns the claims.

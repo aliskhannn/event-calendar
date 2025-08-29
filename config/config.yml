@@ -1,0 +1,8 @@
+server:
+  httpPort: ":8080"
+
+database:
+  sslmode: "disable"
+
+jwt:
+  ttl: "24h"
