@@ -40,7 +40,7 @@ services:
       timeout: 3s
       retries: 1
     volumes:
-      - ./backend/migrations:/migrations
+      - ./migrations:/migrations
     networks:
       - app-network
 

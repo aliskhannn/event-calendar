@@ -26,10 +26,10 @@ type userRepository interface {
 
 type Service struct {
 	userRepo userRepository
-	config   config.Config
+	config   *config.Config
 }
 
-func New(userRepo userRepository, config config.Config) *Service {
+func New(userRepo userRepository, config *config.Config) *Service {
 	return &Service{
 		userRepo: userRepo,
 		config:   config,

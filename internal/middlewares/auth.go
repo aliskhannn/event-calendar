@@ -7,8 +7,8 @@ import (
 	"github.com/aliskhannn/calendar-service/internal/config"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
+	"go.uber.org/zap"
 	"net/http"
-	"os"
 	"strings"
 )
 
@@ -19,7 +19,13 @@ var (
 	ErrExpiredToken       = errors.New("token had expired")
 )
 
-func Auth(cfg config.Config) func(http.Handler) http.Handler {
+// contextKey is a custom type to avoid collisions when storing values in context.
+type contextKey string
+
+// UserIDKey is the key used to store and retrieve the authenticated user's ID from context.
+const UserIDKey contextKey = "user_id"
+
+func Auth(jwtCfg config.JWT, logger *zap.Logger) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			tokenStr := r.Header.Get("Authorization")
@@ -28,6 +34,8 @@ func Auth(cfg config.Config) func(http.Handler) http.Handler {
 				return
 			}
 
+			logger.Info("token string", zap.String("token", tokenStr))
+
 			// Bearer token
 			parts := strings.Split(tokenStr, " ")
 			if len(parts) != 2 || parts[0] != "Bearer" {
@@ -35,20 +43,24 @@ func Auth(cfg config.Config) func(http.Handler) http.Handler {
 				return
 			}
 
-			userID, err := validateToken(parts[1])
+			logger.Info("token parts", zap.Any("parts", parts))
+
+			userID, err := validateToken(parts[1], jwtCfg.Secret)
 			if err != nil {
 				response.Fail(w, http.StatusUnauthorized, ErrInvalidToken)
 				return
 			}
 
-			ctx := context.WithValue(r.Context(), "user_id", userID)
+			logger.Info("userID", zap.Any("userID", userID))
+
+			ctx := context.WithValue(r.Context(), UserIDKey, userID)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
 }
 
 // validateToken verifies a JWT token and returns the claims.
-func validateToken(tokenStr string) (uuid.UUID, error) {
+func validateToken(tokenStr string, secret string) (uuid.UUID, error) {
 	// Parse the token.
 	token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
 		// Validate the signing method.
@@ -56,7 +68,7 @@ func validateToken(tokenStr string) (uuid.UUID, error) {
 			return nil, ErrInvalidToken
 		}
 
-		return []byte(os.Getenv("JWT_SECRET")), nil
+		return []byte(secret), nil
 	})
 	if err != nil {
 		if errors.Is(err, jwt.ErrTokenExpired) {

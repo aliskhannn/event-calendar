@@ -25,7 +25,7 @@ type Handler struct {
 	validator *validator.Validate
 }
 
-func NewHandler(s userService, l *zap.Logger, v *validator.Validate) *Handler {
+func New(s userService, l *zap.Logger, v *validator.Validate) *Handler {
 	return &Handler{
 		service:   s,
 		logger:    l,

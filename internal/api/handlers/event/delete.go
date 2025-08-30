@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/aliskhannn/calendar-service/internal/api/response"
+	"github.com/aliskhannn/calendar-service/internal/middlewares"
 	eventrepo "github.com/aliskhannn/calendar-service/internal/repository/event"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
@@ -26,7 +27,7 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userIDVal := r.Context().Value("user_id")
+	userIDVal := r.Context().Value(middlewares.UserIDKey)
 	userID, ok := userIDVal.(uuid.UUID)
 	if !ok || userID == uuid.Nil {
 		h.logger.Warn("missing or invalid user id in context")

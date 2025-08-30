@@ -87,7 +87,7 @@ func (r *Repository) DeleteEvent(ctx context.Context, eventID, userID uuid.UUID)
 
 func (r *Repository) GetEventsForDay(ctx context.Context, userID uuid.UUID, date time.Time) ([]model.Event, error) {
 	query := `
-		SELECT id, user_id, event_datetime, title, description, created_at, updated_at
+		SELECT id, user_id, event_date, title, description, created_at, updated_at
 		FROM events
 		WHERE user_id = $1 AND event_date = $2
 		ORDER BY event_date
