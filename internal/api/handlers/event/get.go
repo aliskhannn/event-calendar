@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 
@@ -38,7 +37,7 @@ func (h *Handler) getEvents(w http.ResponseWriter, r *http.Request, fetch func(c
 		return
 	}
 
-	dateStr := chi.URLParam(r, "date")
+	dateStr := r.URL.Query().Get("date")
 	if dateStr == "" {
 		h.logger.Warn("missing date in path")
 		response.Fail(w, http.StatusBadRequest, fmt.Errorf("missing date"))

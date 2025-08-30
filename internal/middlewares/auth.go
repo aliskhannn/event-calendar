@@ -8,7 +8,6 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
-	"go.uber.org/zap"
 
 	"github.com/aliskhannn/calendar-service/internal/api/response"
 	"github.com/aliskhannn/calendar-service/internal/config"
@@ -27,7 +26,7 @@ type contextKey string
 // UserIDKey is the key used to store and retrieve the authenticated user's ID from context.
 const UserIDKey contextKey = "user_id"
 
-func Auth(jwtCfg config.JWT, logger *zap.Logger) func(http.Handler) http.Handler {
+func Auth(jwtCfg config.JWT) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			tokenStr := r.Header.Get("Authorization")
@@ -36,8 +35,6 @@ func Auth(jwtCfg config.JWT, logger *zap.Logger) func(http.Handler) http.Handler
 				return
 			}
 
-			logger.Info("token string", zap.String("token", tokenStr))
-
 			// Bearer token
 			parts := strings.Split(tokenStr, " ")
 			if len(parts) != 2 || parts[0] != "Bearer" {
@@ -45,15 +42,11 @@ func Auth(jwtCfg config.JWT, logger *zap.Logger) func(http.Handler) http.Handler
 				return
 			}
 
-			logger.Info("token parts", zap.Any("parts", parts))
-
 			userID, err := validateToken(parts[1], jwtCfg.Secret)
 			if err != nil {
 				response.Fail(w, http.StatusUnauthorized, ErrInvalidToken)
 				return
 			}
-
-			logger.Info("userID", zap.Any("userID", userID))
 
 			ctx := context.WithValue(r.Context(), UserIDKey, userID)
 			next.ServeHTTP(w, r.WithContext(ctx))

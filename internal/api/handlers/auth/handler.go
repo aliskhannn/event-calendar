@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"net/http"
 
+	usersvc "github.com/aliskhannn/calendar-service/internal/service/user"
+
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
@@ -62,8 +64,19 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 
 	id, err := h.service.Create(r.Context(), user)
 	if err != nil {
+		if errors.Is(err, usersvc.ErrUserAlreadyExists) {
+			h.logger.Warn("user already exists", zap.Error(err))
+			response.Fail(w, http.StatusConflict, err)
+			return
+		}
+		if errors.Is(err, userrepo.ErrUserNotFound) {
+			h.logger.Warn("user with provided email not found", zap.Error(err))
+			response.Fail(w, http.StatusServiceUnavailable, err)
+			return
+		}
+
 		h.logger.Error("failed to register user", zap.String("email", req.Email), zap.Error(err))
-		response.Fail(w, http.StatusBadRequest, err)
+		response.Fail(w, http.StatusInternalServerError, fmt.Errorf("internal server error"))
 		return
 	}
 
@@ -81,14 +94,17 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 
 	token, err := h.service.GetByEmail(r.Context(), req.Email, req.Password)
 	if err != nil {
+		if errors.Is(err, usersvc.ErrInvalidCredentials) {
+			response.Fail(w, http.StatusUnauthorized, err)
+		}
 		if errors.Is(err, userrepo.ErrUserNotFound) {
 			h.logger.Info("user not found", zap.String("email", req.Email))
-			response.Fail(w, http.StatusNotFound, fmt.Errorf("user not found"))
+			response.Fail(w, http.StatusServiceUnavailable, err)
 			return
 		}
 
-		h.logger.Warn("failed login attempt", zap.String("email", req.Email), zap.Error(err))
-		response.Fail(w, http.StatusUnauthorized, err)
+		h.logger.Warn("failed login", zap.String("email", req.Email), zap.Error(err))
+		response.Fail(w, http.StatusInternalServerError, fmt.Errorf("internal server error"))
 		return
 	}
 

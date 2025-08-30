@@ -2,12 +2,17 @@ package event
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/google/uuid"
 
 	"github.com/aliskhannn/calendar-service/internal/model"
+)
+
+var (
+	ErrInvalidDate = errors.New("invalid event date")
 )
 
 type eventRepo interface {
@@ -30,6 +35,10 @@ func New(r eventRepo) *Service {
 }
 
 func (s *Service) CreateEvent(ctx context.Context, event model.Event) (uuid.UUID, error) {
+	if event.EventDate.IsZero() {
+		return uuid.Nil, ErrInvalidDate
+	}
+
 	id, err := s.eventRepo.CreateEvent(ctx, event)
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("create event: %w", err)

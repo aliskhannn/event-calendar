@@ -17,7 +17,8 @@ import (
 )
 
 var (
-	ErrUserAlreadyExists = errors.New("user already exists")
+	ErrUserAlreadyExists  = errors.New("user already exists")
+	ErrInvalidCredentials = errors.New("invalid email or password")
 )
 
 type userRepository interface {
@@ -66,12 +67,16 @@ func (s *Service) Create(ctx context.Context, user model.User) (uuid.UUID, error
 func (s *Service) GetByEmail(ctx context.Context, email, password string) (string, error) {
 	user, err := s.userRepo.GetUserByEmail(ctx, email)
 	if err != nil {
+		if errors.Is(err, userrepo.ErrUserNotFound) {
+			return "", ErrInvalidCredentials
+		}
+
 		return "", fmt.Errorf("get user by email: %w", err)
 	}
 
 	// Verify password.
 	if err := verifyPassword(password, user.Password); err != nil {
-		return "", fmt.Errorf("verify password: %w", err)
+		return "", ErrInvalidCredentials
 	}
 
 	// Generate JWT token.

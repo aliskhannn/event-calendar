@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/aliskhannn/calendar-service/internal/middlewares"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
@@ -23,6 +25,14 @@ type UpdateRequest struct {
 }
 
 func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
+	userIDVal := r.Context().Value(middlewares.UserIDKey)
+	userID, ok := userIDVal.(uuid.UUID)
+	if !ok || userID == uuid.Nil {
+		h.logger.Warn("missing or invalid user id in context")
+		response.Fail(w, http.StatusUnauthorized, fmt.Errorf("unauthorized"))
+		return
+	}
+
 	idStr := chi.URLParam(r, "id")
 	if idStr == "" {
 		h.logger.Warn("missing event id in path")
@@ -52,6 +62,7 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 
 	event := model.Event{
 		ID:          eventID,
+		UserID:      userID,
 		Title:       req.Title,
 		Description: req.Description,
 		EventDate:   req.EventDate,

@@ -24,7 +24,7 @@ func New(authHandler *auth.Handler, eventHandler *event.Handler, config *config.
 	r.Use(middleware.Timeout(15 * time.Second))
 	r.Use(middlewares.Logger(logger))
 
-	authMiddleware := middlewares.Auth(config.JWT, logger)
+	authMiddleware := middlewares.Auth(config.JWT)
 
 	r.Route("/api", func(r chi.Router) {
 		// Public routes
@@ -42,9 +42,9 @@ func New(authHandler *auth.Handler, eventHandler *event.Handler, config *config.
 				r.Put("/{id}", eventHandler.Update)
 				r.Delete("/{id}", eventHandler.Delete)
 
-				r.Get("/day/{date}", eventHandler.GetDay)
-				r.Get("/week/{date}", eventHandler.GetWeek)
-				r.Get("/month/{date}", eventHandler.GetMonth)
+				r.Get("/day", eventHandler.GetDay)
+				r.Get("/week", eventHandler.GetWeek)
+				r.Get("/month", eventHandler.GetMonth)
 			})
 		})
 	})
