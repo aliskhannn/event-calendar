@@ -5,13 +5,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/aliskhannn/calendar-service/internal/api/response"
-	"github.com/aliskhannn/calendar-service/internal/model"
-	userrepo "github.com/aliskhannn/calendar-service/internal/repository/user"
+	"net/http"
+
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
-	"net/http"
+
+	"github.com/aliskhannn/calendar-service/internal/api/response"
+	"github.com/aliskhannn/calendar-service/internal/model"
+	userrepo "github.com/aliskhannn/calendar-service/internal/repository/user"
 )
 
 type userService interface {

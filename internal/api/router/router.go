@@ -1,15 +1,17 @@
 package router
 
 import (
+	"net/http"
+	"time"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
+	"go.uber.org/zap"
+
 	"github.com/aliskhannn/calendar-service/internal/api/handlers/auth"
 	"github.com/aliskhannn/calendar-service/internal/api/handlers/event"
 	"github.com/aliskhannn/calendar-service/internal/config"
 	"github.com/aliskhannn/calendar-service/internal/middlewares"
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
-	"go.uber.org/zap"
-	"net/http"
-	"time"
 )
 
 func New(authHandler *auth.Handler, eventHandler *event.Handler, config *config.Config, logger *zap.Logger) http.Handler {

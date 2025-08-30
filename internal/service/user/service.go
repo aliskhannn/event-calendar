@@ -4,8 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/aliskhannn/calendar-service/internal/config"
 	"time"
+
+	"github.com/aliskhannn/calendar-service/internal/config"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"

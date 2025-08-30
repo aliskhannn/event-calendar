@@ -4,14 +4,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/aliskhannn/calendar-service/internal/api/response"
-	"github.com/aliskhannn/calendar-service/internal/model"
-	eventrepo "github.com/aliskhannn/calendar-service/internal/repository/event"
+	"net/http"
+	"time"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
-	"net/http"
-	"time"
+
+	"github.com/aliskhannn/calendar-service/internal/api/response"
+	"github.com/aliskhannn/calendar-service/internal/model"
+	eventrepo "github.com/aliskhannn/calendar-service/internal/repository/event"
 )
 
 type UpdateRequest struct {

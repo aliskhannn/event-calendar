@@ -3,6 +3,15 @@ package main
 import (
 	"context"
 	"errors"
+	"net/http"
+	"os/signal"
+	"syscall"
+	"time"
+
+	"github.com/go-playground/validator/v10"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"go.uber.org/zap"
+
 	authhandler "github.com/aliskhannn/calendar-service/internal/api/handlers/auth"
 	eventhandler "github.com/aliskhannn/calendar-service/internal/api/handlers/event"
 	"github.com/aliskhannn/calendar-service/internal/api/router"
@@ -13,13 +22,6 @@ import (
 	userrepo "github.com/aliskhannn/calendar-service/internal/repository/user"
 	eventsvc "github.com/aliskhannn/calendar-service/internal/service/event"
 	usersvc "github.com/aliskhannn/calendar-service/internal/service/user"
-	"github.com/go-playground/validator/v10"
-	"github.com/jackc/pgx/v5/pgxpool"
-	"go.uber.org/zap"
-	"net/http"
-	"os/signal"
-	"syscall"
-	"time"
 )
 
 func main() {

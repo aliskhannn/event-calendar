@@ -3,13 +3,15 @@ package middlewares
 import (
 	"context"
 	"errors"
-	"github.com/aliskhannn/calendar-service/internal/api/response"
-	"github.com/aliskhannn/calendar-service/internal/config"
+	"net/http"
+	"strings"
+
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
-	"net/http"
-	"strings"
+
+	"github.com/aliskhannn/calendar-service/internal/api/response"
+	"github.com/aliskhannn/calendar-service/internal/config"
 )
 
 var (

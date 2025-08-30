@@ -3,13 +3,15 @@ package event
 import (
 	"errors"
 	"fmt"
-	"github.com/aliskhannn/calendar-service/internal/api/response"
-	"github.com/aliskhannn/calendar-service/internal/middlewares"
-	eventrepo "github.com/aliskhannn/calendar-service/internal/repository/event"
+	"net/http"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
-	"net/http"
+
+	"github.com/aliskhannn/calendar-service/internal/api/response"
+	"github.com/aliskhannn/calendar-service/internal/middlewares"
+	eventrepo "github.com/aliskhannn/calendar-service/internal/repository/event"
 )
 
 func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {

@@ -4,15 +4,17 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
+	"time"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
+	"go.uber.org/zap"
+
 	"github.com/aliskhannn/calendar-service/internal/api/response"
 	"github.com/aliskhannn/calendar-service/internal/middlewares"
 	"github.com/aliskhannn/calendar-service/internal/model"
 	eventrepo "github.com/aliskhannn/calendar-service/internal/repository/event"
-	"github.com/go-chi/chi/v5"
-	"github.com/google/uuid"
-	"go.uber.org/zap"
-	"net/http"
-	"time"
 )
 
 func (h *Handler) GetDay(w http.ResponseWriter, r *http.Request) {

@@ -3,13 +3,15 @@ package event
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"time"
+
+	"github.com/google/uuid"
+	"go.uber.org/zap"
+
 	"github.com/aliskhannn/calendar-service/internal/api/response"
 	"github.com/aliskhannn/calendar-service/internal/middlewares"
 	"github.com/aliskhannn/calendar-service/internal/model"
-	"github.com/google/uuid"
-	"go.uber.org/zap"
-	"net/http"
-	"time"
 )
 
 type CreateRequest struct {

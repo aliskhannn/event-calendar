@@ -2,11 +2,13 @@ package event
 
 import (
 	"context"
-	"github.com/aliskhannn/calendar-service/internal/model"
+	"time"
+
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
-	"time"
+
+	"github.com/aliskhannn/calendar-service/internal/model"
 )
 
 type eventService interface {
