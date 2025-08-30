@@ -11,6 +11,7 @@ import (
 	"github.com/aliskhannn/calendar-service/internal/model"
 )
 
+//go:generate mockgen -source=handler.go -destination=../../../mocks/api/handlers/event/mock_event_service.go -package=mocks
 type eventService interface {
 	CreateEvent(ctx context.Context, event model.Event) (uuid.UUID, error)
 	UpdateEvent(ctx context.Context, event model.Event) error

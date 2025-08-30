@@ -21,6 +21,7 @@ var (
 	ErrInvalidCredentials = errors.New("invalid email or password")
 )
 
+//go:generate mockgen -source=service.go -destination=../../mocks/service/user/mock_user.go -package=mocks
 type userRepository interface {
 	CreateUser(ctx context.Context, user model.User) (uuid.UUID, error)
 	GetUserByEmail(ctx context.Context, email string) (*model.User, error)

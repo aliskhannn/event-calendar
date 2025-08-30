@@ -15,6 +15,7 @@ var (
 	ErrInvalidDate = errors.New("invalid event date")
 )
 
+//go:generate mockgen -source=service.go -destination=../../mocks/service/event/mock_event.go -package=mocks
 type eventRepo interface {
 	CreateEvent(ctx context.Context, event model.Event) (uuid.UUID, error)
 	UpdateEvent(ctx context.Context, event model.Event) error

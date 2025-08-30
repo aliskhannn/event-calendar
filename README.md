@@ -144,7 +144,7 @@ Get events for the month containing the given date.
 
 ---
 
-## 📦 Installation & Setup
+## Installation & Setup
 
 ### 1. Clone repository
 
@@ -175,8 +175,23 @@ make docker-down
 
 ### 4. Run tests
 
+Before running tests, create a test database in PostgreSQL:
+```sql
+CREATE DATABASE calendar_test;
+```
+
+Then export the connection string for the test database:
 ```bash
-make test
+export TEST_DATABASE_URL=postgres://user:password@localhost:5432/testdb?sslmode=disable
+```
+
+Run the tests:
+```bash
+# Run unit tests
+make test-unit
+
+# Run integration tests
+make test-integration
 ```
 
 ### 5. Lint & format
@@ -188,7 +203,7 @@ make format
 
 ---
 
-## ⚙️ Tech Stack
+## Tech Stack
 
 * **Go** — backend implementation
 * **Chi** — HTTP router
@@ -201,7 +216,7 @@ make format
 
 ---
 
-## 📑 API Responses
+## API Responses
 
 * **200 OK** — success
 * **201 Created** — resource created

@@ -1,6 +1,21 @@
 # Run all backend tests with verbose output
-test:
-	go test -v ./...
+# The Path to Go Modules
+GOMOD := $(shell go list -m)
+
+# Run only unit tests (from folders with mocks)
+test-unit:
+	go test -v -tags=unit ./...
+
+# Run only integration tests (connect to TEST_DATABASE_URL)
+test-integration:
+	go test -v -tags=integration ./...
+
+# Running tests with coverage report
+test-coverage:
+	go test -v -coverprofile=coverage.out -tags=unit ./...
+	go test -v -coverprofile=coverage.out -tags=integration ./...
+	go tool cover -html=coverage.out
+	go tool cover -html=coverage_integration.out
 
 # Format Go code using goimports
 format:
