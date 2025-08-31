@@ -7,16 +7,18 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	mocksusersvc "github.com/aliskhannn/calendar-service/internal/mocks/api/handlers/user"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	"github.com/aliskhannn/calendar-service/internal/service/user"
+	mocksusersvc "github.com/aliskhannn/calendar-service/internal/mocks/api/handlers/user"
+
 	"github.com/go-playground/validator/v10"
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
+
+	"github.com/aliskhannn/calendar-service/internal/service/user"
 )
 
 func setupUserHandler(t *testing.T) (*gomock.Controller, *mocksusersvc.MockuserService, *Handler) {

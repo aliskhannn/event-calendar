@@ -6,13 +6,15 @@ package event
 import (
 	"context"
 	"errors"
-	eventrepomocks "github.com/aliskhannn/calendar-service/internal/mocks/service/event"
 	"testing"
 	"time"
 
-	"github.com/aliskhannn/calendar-service/internal/model"
+	eventrepomocks "github.com/aliskhannn/calendar-service/internal/mocks/service/event"
+
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
+
+	"github.com/aliskhannn/calendar-service/internal/model"
 )
 
 func TestService_CreateEvent(t *testing.T) {

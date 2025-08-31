@@ -6,15 +6,17 @@ package event
 import (
 	"context"
 	"errors"
-	"github.com/joho/godotenv"
 	"log"
 	"os"
 	"testing"
 	"time"
 
-	"github.com/aliskhannn/calendar-service/internal/model"
+	"github.com/joho/godotenv"
+
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
+
+	"github.com/aliskhannn/calendar-service/internal/model"
 )
 
 var testRepo *Repository

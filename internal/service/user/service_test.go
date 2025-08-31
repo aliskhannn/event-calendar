@@ -5,16 +5,18 @@ package user
 
 import (
 	"context"
-	mocksuserrepo "github.com/aliskhannn/calendar-service/internal/mocks/service/user"
-	userrepo "github.com/aliskhannn/calendar-service/internal/repository/user"
 	"testing"
 	"time"
 
-	"github.com/aliskhannn/calendar-service/internal/config"
-	"github.com/aliskhannn/calendar-service/internal/model"
+	mocksuserrepo "github.com/aliskhannn/calendar-service/internal/mocks/service/user"
+	userrepo "github.com/aliskhannn/calendar-service/internal/repository/user"
+
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
+
+	"github.com/aliskhannn/calendar-service/internal/config"
+	"github.com/aliskhannn/calendar-service/internal/model"
 )
 
 func TestCreateUser_Success(t *testing.T) {

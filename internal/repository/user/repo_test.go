@@ -9,10 +9,11 @@ import (
 	"os"
 	"testing"
 
-	"github.com/aliskhannn/calendar-service/internal/model"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
+
+	"github.com/aliskhannn/calendar-service/internal/model"
 )
 
 var (

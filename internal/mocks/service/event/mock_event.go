@@ -9,9 +9,10 @@ import (
 	reflect "reflect"
 	time "time"
 
-	model "github.com/aliskhannn/calendar-service/internal/model"
 	gomock "github.com/golang/mock/gomock"
 	uuid "github.com/google/uuid"
+
+	model "github.com/aliskhannn/calendar-service/internal/model"
 )
 
 // MockeventRepo is a mock of eventRepo interface.

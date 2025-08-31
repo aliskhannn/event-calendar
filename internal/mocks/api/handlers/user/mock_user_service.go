@@ -8,9 +8,10 @@ import (
 	context "context"
 	reflect "reflect"
 
-	model "github.com/aliskhannn/calendar-service/internal/model"
 	gomock "github.com/golang/mock/gomock"
 	uuid "github.com/google/uuid"
+
+	model "github.com/aliskhannn/calendar-service/internal/model"
 )
 
 // MockuserService is a mock of userService interface.

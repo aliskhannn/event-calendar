@@ -7,20 +7,22 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	mockseventsvc "github.com/aliskhannn/calendar-service/internal/mocks/api/handlers/event"
-	"github.com/aliskhannn/calendar-service/internal/repository/event"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
 
-	"github.com/aliskhannn/calendar-service/internal/middlewares"
-	"github.com/aliskhannn/calendar-service/internal/model"
+	mockseventsvc "github.com/aliskhannn/calendar-service/internal/mocks/api/handlers/event"
+	"github.com/aliskhannn/calendar-service/internal/repository/event"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/go-playground/validator/v10"
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
+
+	"github.com/aliskhannn/calendar-service/internal/middlewares"
+	"github.com/aliskhannn/calendar-service/internal/model"
 )
 
 func setupHandler(t *testing.T) (*gomock.Controller, *mockseventsvc.MockeventService, *Handler) {
