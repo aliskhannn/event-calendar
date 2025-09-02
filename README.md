@@ -20,26 +20,30 @@ The service provides CRUD operations for events, as well as endpoints for queryi
 ## Project Structure
 
 ```
-cmd
-|-- server          # Application entrypoint (main.go)
-config              # Application config (YAML)
-internal
-|-- api
-│   └── handlers    # HTTP handlers (auth, event)
-│   └── response    # Unified JSON response helpers
-│   └── router      # HTTP routes
-│   └── server      # HTTP server
-|-- config          # Config loader
-|-- logger          # Logger setup (zap)
-|-- middlewares     # Middleware (auth, logging)
-|-- model           # Domain models (User, Event, etc.)
-|-- repository      # Data access layer
-|-- service         # Business logic layer
-|-- migrations      # SQL migrations
-|-- docker-compose.yml
-|-- Dockerfile
-|-- Makefile
-|-- README.md
+.
+├── cmd                     
+│   └── server              
+│       └── main.go          # Application entrypoint
+├── config                   # Application config (YAML)
+├── internal                
+│   ├── api                 
+│   │   ├── handlers         # HTTP handlers (auth, event)
+│   │   ├── response         # Unified JSON response helpers
+│   │   ├── router           # HTTP routes
+│   │   └── server           # HTTP server
+│   ├── config               # Config loader
+│   ├── logger               # Logger setup (zap)
+│   ├── middlewares          # Middleware (auth, logging)
+│   ├── model                # Domain models (User, Event, etc.)
+│   ├── repository           # Data access layer
+│   └── service              # Business logic layer
+├── migrations               # SQL migrations
+├── go.mod                   
+├── go.sum                   
+├── Dockerfile               
+├── docker-compose.yml       
+├── Makefile                 
+└── README.md                
 ```
 
 ---
