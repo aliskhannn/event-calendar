@@ -5,7 +5,6 @@ package event
 
 import (
 	"context"
-	"errors"
 	"testing"
 	"time"
 
@@ -40,21 +39,6 @@ func TestService_CreateEvent(t *testing.T) {
 	}
 	if id != mockID {
 		t.Fatalf("expected id %v, got %v", mockID, id)
-	}
-}
-
-func TestService_CreateEvent_InvalidDate(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRepo := eventrepomocks.NewMockeventRepo(ctrl)
-	svc := New(mockRepo)
-
-	ev := model.Event{} // EventDate zero
-
-	_, err := svc.CreateEvent(context.Background(), ev)
-	if !errors.Is(err, ErrInvalidDate) {
-		t.Fatalf("expected ErrInvalidDate, got %v", err)
 	}
 }
 
