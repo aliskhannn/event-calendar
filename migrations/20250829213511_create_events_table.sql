@@ -15,5 +15,4 @@ CREATE TABLE IF NOT EXISTS events
 -- +goose Down
 -- +goose StatementBegin
 DROP TABLE IF EXISTS events;
-DROP EXTENSION IF EXISTS "uuid-ossp";
 -- +goose StatementEnd
