@@ -1,7 +1,3 @@
-# Run all backend tests with verbose output
-# The Path to Go Modules
-GOMOD := $(shell go list -m)
-
 # Run only unit tests (from folders with mocks)
 test-unit:
 	go test -v -tags=unit ./...
