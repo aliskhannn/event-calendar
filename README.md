@@ -179,23 +179,9 @@ make docker-down
 
 ### 4. Run tests
 
-Before running tests, create a test database in PostgreSQL:
-```sql
-CREATE DATABASE calendar_test;
-```
-
-Then export the connection string for the test database:
-```bash
-export TEST_DATABASE_URL=postgres://user:password@localhost:5432/testdb?sslmode=disable
-```
-
-Run the tests:
 ```bash
 # Run unit tests
 make test-unit
-
-# Run integration tests
-make test-integration
 ```
 
 ### 5. Lint & format

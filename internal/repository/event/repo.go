@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
+
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/aliskhannn/calendar-service/internal/model"
 )
@@ -16,11 +18,17 @@ var (
 	ErrEventNotFound = errors.New("event not found")
 )
 
-type Repository struct {
-	db *pgxpool.Pool
+type DB interface {
+	Exec(ctx context.Context, sql string, arguments ...any) (pgconn.CommandTag, error)
+	Query(ctx context.Context, sql string, optionsAndArgs ...any) (pgx.Rows, error)
+	QueryRow(ctx context.Context, sql string, optionsAndArgs ...any) pgx.Row
 }
 
-func New(db *pgxpool.Pool) *Repository {
+type Repository struct {
+	db DB
+}
+
+func New(db DB) *Repository {
 	return &Repository{
 		db: db,
 	}

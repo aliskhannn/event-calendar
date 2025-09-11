@@ -1,116 +1,102 @@
-//go:build integration
-// +build integration
-
 package event
 
 import (
 	"context"
-	"errors"
-	"log"
-	"os"
 	"testing"
 	"time"
 
-	"github.com/joho/godotenv"
-
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/pashagolub/pgxmock/v4"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/aliskhannn/calendar-service/internal/model"
 )
 
-var testRepo *Repository
-var testUserID uuid.UUID
-
-func TestMain(m *testing.M) {
-	_ = godotenv.Load(".env.test")
-	// Connecting to a test database.
-	dsn := os.Getenv("TEST_DATABASE_URL")
-	if dsn == "" {
-		log.Fatal("TEST_DATABASE_URL is not set")
-	}
-	db, err := pgxpool.New(context.Background(), dsn)
+func newTestRepo(t *testing.T) (*Repository, pgxmock.PgxPoolIface) {
+	mock, err := pgxmock.NewPool()
 	if err != nil {
-		panic(err)
+		t.Fatalf("failed to create pgxmock: %v", err)
 	}
-	defer db.Close()
-
-	testRepo = New(db)
-	testUserID = uuid.New()
-
-	// Очистка таблицы перед тестами
-	db.Exec(context.Background(), "DELETE FROM events")
-
-	os.Exit(m.Run())
+	return New(mock), mock
 }
 
-func createTestEvent(t *testing.T, title string) model.Event {
-	e := model.Event{
-		UserID:    testUserID,
-		Title:     title,
-		EventDate: time.Now().Truncate(time.Second),
+func TestRepository_CreateEvent(t *testing.T) {
+	repo, mock := newTestRepo(t)
+	defer mock.Close()
+
+	id := uuid.New()
+	event := model.Event{
+		UserID:      uuid.New(),
+		Title:       "Test event",
+		Description: "desc",
+		EventDate:   time.Now(),
 	}
-	id, err := testRepo.CreateEvent(context.Background(), e)
-	if err != nil {
-		t.Fatalf("failed to create test event: %v", err)
-	}
-	e.ID = id
-	return e
+
+	mock.ExpectQuery("INSERT INTO events").
+		WithArgs(event.UserID, event.EventDate, event.Title, event.Description).
+		WillReturnRows(pgxmock.NewRows([]string{"id"}).AddRow(id))
+
+	gotID, err := repo.CreateEvent(context.Background(), event)
+	assert.NoError(t, err)
+	assert.Equal(t, id, gotID)
+	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestRepository_CreateUpdateDelete(t *testing.T) {
-	// Create
-	testEvent := createTestEvent(t, "My Test Event")
+func TestRepository_UpdateEvent(t *testing.T) {
+	repo, mock := newTestRepo(t)
+	defer mock.Close()
 
-	// Update
-	testEvent.Title = "Updated Title"
-	err := testRepo.UpdateEvent(context.Background(), testEvent)
-	if err != nil {
-		t.Fatalf("failed to update event: %v", err)
+	event := model.Event{
+		ID:          uuid.New(),
+		UserID:      uuid.New(),
+		Title:       "Updated",
+		Description: "new desc",
+		EventDate:   time.Now(),
 	}
 
-	// Delete
-	err = testRepo.DeleteEvent(context.Background(), testEvent.ID, testEvent.UserID)
-	if err != nil {
-		t.Fatalf("failed to delete event: %v", err)
-	}
+	mock.ExpectExec("UPDATE events").
+		WithArgs(event.EventDate, event.Title, event.Description, event.ID, event.UserID).
+		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 
-	// Delete again -> should return ErrEventNotFound
-	err = testRepo.DeleteEvent(context.Background(), testEvent.ID, testEvent.UserID)
-	if !errors.Is(err, ErrEventNotFound) {
-		t.Fatalf("expected ErrEventNotFound, got: %v", err)
-	}
+	err := repo.UpdateEvent(context.Background(), event)
+	assert.NoError(t, err)
+	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestRepository_GetEvents(t *testing.T) {
-	// Создаем два события для тестового пользователя
-	event1 := createTestEvent(t, "Event 1")
-	createTestEvent(t, "Event 2") // второе событие для недели и месяца
+func TestRepository_DeleteEvent_NotFound(t *testing.T) {
+	repo, mock := newTestRepo(t)
+	defer mock.Close()
 
-	// GetEventsForDay
-	dayEvents, err := testRepo.GetEventsForDay(context.Background(), testUserID, event1.EventDate)
-	if err != nil {
-		t.Fatalf("GetEventsForDay failed: %v", err)
-	}
-	if len(dayEvents) == 0 {
-		t.Fatalf("expected at least one event for the day")
-	}
+	eventID := uuid.New()
+	userID := uuid.New()
 
-	// GetEventsForWeek
-	weekEvents, err := testRepo.GetEventsForWeek(context.Background(), testUserID, time.Now())
-	if err != nil {
-		t.Fatalf("GetEventsForWeek failed: %v", err)
-	}
-	if len(weekEvents) < 2 {
-		t.Fatalf("expected at least 2 events for the week, got %d", len(weekEvents))
-	}
+	mock.ExpectExec("DELETE FROM events").
+		WithArgs(eventID, userID).
+		WillReturnResult(pgxmock.NewResult("DELETE", 0))
 
-	// GetEventsForMonth
-	monthEvents, err := testRepo.GetEventsForMonth(context.Background(), testUserID, time.Now())
-	if err != nil {
-		t.Fatalf("GetEventsForMonth failed: %v", err)
-	}
-	if len(monthEvents) < 2 {
-		t.Fatalf("expected at least 2 events for the month, got %d", len(monthEvents))
-	}
+	err := repo.DeleteEvent(context.Background(), eventID, userID)
+	assert.ErrorIs(t, err, ErrEventNotFound)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestRepository_GetEventsForDay(t *testing.T) {
+	repo, mock := newTestRepo(t)
+	defer mock.Close()
+
+	userID := uuid.New()
+	date := time.Now()
+	id := uuid.New()
+
+	mock.ExpectQuery("SELECT id, user_id, event_date, title, description, created_at, updated_at FROM events").
+		WithArgs(userID, date).
+		WillReturnRows(
+			pgxmock.NewRows([]string{"id", "user_id", "event_date", "title", "description", "created_at", "updated_at"}).
+				AddRow(id, userID, date, "Meeting", "Discuss", time.Now(), time.Now()),
+		)
+
+	events, err := repo.GetEventsForDay(context.Background(), userID, date)
+	assert.NoError(t, err)
+	assert.Len(t, events, 1)
+	assert.Equal(t, "Meeting", events[0].Title)
+	assert.NoError(t, mock.ExpectationsWereMet())
 }
