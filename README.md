@@ -181,7 +181,7 @@ make docker-down
 
 ```bash
 # Run unit tests
-make test-unit
+make test
 ```
 
 ### 5. Lint & format
