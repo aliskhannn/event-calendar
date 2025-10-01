@@ -5,9 +5,11 @@ import (
 	"errors"
 	"net/http"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
 
+	"github.com/aliskhannn/delayed-notifier/pkg/email"
 	"github.com/go-playground/validator/v10"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"go.uber.org/zap"
@@ -18,35 +20,77 @@ import (
 	"github.com/aliskhannn/calendar-service/internal/api/server"
 	"github.com/aliskhannn/calendar-service/internal/config"
 	"github.com/aliskhannn/calendar-service/internal/logger"
+	"github.com/aliskhannn/calendar-service/internal/middlewares"
+	"github.com/aliskhannn/calendar-service/internal/model"
 	eventrepo "github.com/aliskhannn/calendar-service/internal/repository/event"
 	userrepo "github.com/aliskhannn/calendar-service/internal/repository/user"
 	eventsvc "github.com/aliskhannn/calendar-service/internal/service/event"
 	usersvc "github.com/aliskhannn/calendar-service/internal/service/user"
+	"github.com/aliskhannn/calendar-service/internal/worker/archiver"
+	"github.com/aliskhannn/calendar-service/internal/worker/reminder"
 )
 
 func main() {
+	// Context for graceful shutdown.
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
+	// Load configuration.
 	cfg := config.Must()
+
+	// Initialize logger and validator.
 	log := logger.CreateLogger()
 	val := validator.New()
 
-	dbpool, err := pgxpool.New(ctx, cfg.DatabaseURL())
+	// Connect to database.
+	dbPool, err := pgxpool.New(ctx, cfg.DatabaseURL())
 	if err != nil {
 		log.Fatal("error creating connection pool", zap.Error(err))
 	}
 
-	eventRepo := eventrepo.New(dbpool)
-	userRepo := userrepo.New(dbpool)
+	// Repositories.
+	userRepo := userrepo.New(dbPool)
+	eventRepo := eventrepo.New(dbPool)
 
-	eventSvc := eventsvc.New(eventRepo)
-	eventHandler := eventhandler.New(eventSvc, log, val)
-
+	// Repositories.
 	userSvc := usersvc.New(userRepo, cfg)
-	authHandler := authhandler.New(userSvc, log, val)
+	eventSvc := eventsvc.New(eventRepo)
 
-	r := router.New(authHandler, eventHandler, cfg, log)
+	// Reminder channel.
+	reminderCh := make(chan model.Reminder, 100)
+
+	// HTTP Handlers.
+	authHandler := authhandler.New(userSvc, log, val)
+	eventHandler := eventhandler.New(eventSvc, reminderCh, log, val)
+
+	// Email client for reminders.
+	smtpPort, err := strconv.Atoi(cfg.Email.SMTPPort)
+	if err != nil {
+		log.Fatal("error parsing SMTP port", zap.Error(err))
+	}
+
+	emailClient := email.NewClient(
+		cfg.Email.SMTPHost,
+		smtpPort,
+		cfg.Email.Username,
+		cfg.Email.Password,
+		cfg.Email.From,
+	)
+
+	// Start reminder worker.
+	reminderWorker := reminder.NewWorker(reminderCh, userSvc, emailClient, log)
+	reminderWorker.Start(ctx)
+
+	// Start archiver worker.
+	archiverWorker := archiver.NewWorker(eventSvc, log)
+	archiverWorker.Start(ctx, cfg.Archiver.Interval)
+
+	// Async logging.
+	logCh := make(chan middlewares.LogEntry, 100)
+	middlewares.StartAsyncLogger(logCh, log)
+
+	// Setup router and server.
+	r := router.New(authHandler, eventHandler, cfg, logCh)
 	s := server.New(cfg.Server.HTTPPort, r)
 
 	go func() {
@@ -56,9 +100,11 @@ func main() {
 		}
 	}()
 
+	// Wait for shutdown signal.
 	<-ctx.Done()
 	log.Info("shutdown signal received")
 
+	// Graceful shutdown with timeout.
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -72,5 +118,5 @@ func main() {
 	}
 
 	log.Info("closing database pool...")
-	dbpool.Close()
+	dbPool.Close()
 }

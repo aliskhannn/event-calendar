@@ -6,3 +6,6 @@ database:
 
 jwt:
   ttl: "24h"
+
+archiver:
+  interval: 5m

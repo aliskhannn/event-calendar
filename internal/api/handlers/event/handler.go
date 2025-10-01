@@ -28,10 +28,16 @@ type Handler struct {
 	validator  *validator.Validate
 }
 
-func New(s eventService, l *zap.Logger, v *validator.Validate) *Handler {
+func New(
+	s eventService,
+	reminderCh chan<- model.Reminder,
+	l *zap.Logger,
+	v *validator.Validate,
+) *Handler {
 	return &Handler{
-		service:   s,
-		logger:    l,
-		validator: v,
+		service:    s,
+		reminderCh: reminderCh,
+		logger:     l,
+		validator:  v,
 	}
 }

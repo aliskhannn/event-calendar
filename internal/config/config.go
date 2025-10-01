@@ -13,6 +13,8 @@ type Config struct {
 	Server   Server   `yaml:"server"`
 	Database Database `yaml:"database"`
 	JWT      JWT      `yaml:"jwt"`
+	Email    Email    `yaml:"email"`
+	Archiver Archiver `yaml:"archiver"`
 }
 
 type Server struct {
@@ -31,6 +33,19 @@ type Database struct {
 type JWT struct {
 	Secret string
 	TTL    time.Duration `yaml:"ttl"`
+}
+
+// Email holds SMTP configuration for sending emails.
+type Email struct {
+	SMTPHost string `mapstructure:"smtp_host"`
+	SMTPPort string `mapstructure:"smtp_port"`
+	Username string `mapstructure:"username"`
+	Password string `mapstructure:"password"`
+	From     string `mapstructure:"from"`
+}
+
+type Archiver struct {
+	Interval time.Duration `yaml:"interval"`
 }
 
 // DatabaseURL builds a PostgreSQL connection string
@@ -66,6 +81,12 @@ func Must() *Config {
 	cfg.Database.Name = os.Getenv("DB_NAME")
 
 	cfg.JWT.Secret = os.Getenv("JWT_SECRET")
+
+	cfg.Email.SMTPHost = os.Getenv("SMTP_HOST")
+	cfg.Email.SMTPPort = os.Getenv("SMTP_PORT")
+	cfg.Email.Username = os.Getenv("SMTP_USERNAME")
+	cfg.Email.Password = os.Getenv("SMTP_PASSWORD")
+	cfg.Email.From = os.Getenv("EMAIL_FROM")
 
 	return &cfg
 }

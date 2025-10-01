@@ -6,7 +6,6 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
-	"go.uber.org/zap"
 
 	"github.com/aliskhannn/calendar-service/internal/api/handlers/auth"
 	"github.com/aliskhannn/calendar-service/internal/api/handlers/event"
@@ -14,7 +13,7 @@ import (
 	"github.com/aliskhannn/calendar-service/internal/middlewares"
 )
 
-func New(authHandler *auth.Handler, eventHandler *event.Handler, config *config.Config, logger *zap.Logger) http.Handler {
+func New(authHandler *auth.Handler, eventHandler *event.Handler, config *config.Config, logCh chan<- middlewares.LogEntry) http.Handler {
 	r := chi.NewRouter()
 
 	// Middlewares
@@ -22,7 +21,7 @@ func New(authHandler *auth.Handler, eventHandler *event.Handler, config *config.
 	r.Use(middleware.RealIP)
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.Timeout(15 * time.Second))
-	r.Use(middlewares.Logger(logger))
+	r.Use(middlewares.Logger(logCh))
 
 	authMiddleware := middlewares.Auth(config.JWT)
 
