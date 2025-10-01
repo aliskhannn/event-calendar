@@ -14,14 +14,23 @@ import (
 	"github.com/aliskhannn/calendar-service/internal/model"
 )
 
+// CreateRequest represents the payload for creating a new event.
 type CreateRequest struct {
 	UserID      uuid.UUID  `json:"user_id" validate:"required"`
 	Title       string     `json:"title" validate:"required,min=3,max=255"`
 	Description string     `json:"description" validate:"max=1000"`
 	EventDate   time.Time  `json:"event_date" validate:"required"`
-	ReminderAt  *time.Time `json:"reminder_at"`
+	ReminderAt  *time.Time `json:"reminder_at"` // optional reminder timestamp
 }
 
+// Create handles the creation of a new event.
+//
+// It performs the following steps:
+// 1. Extracts user ID from the request context.
+// 2. Decodes and validates the request body.
+// 3. Creates the event via the service.
+// 4. Pushes a reminder to the background worker channel if ReminderAt is set and in the future.
+// 5. Returns the created event ID in the response.
 func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	userIDVal := r.Context().Value(middlewares.UserIDKey)
 	userID, ok := userIDVal.(uuid.UUID)
@@ -35,12 +44,14 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	var req CreateRequest
 	req.UserID = userID
 
+	// Decode JSON payload.
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		h.logger.Error("failed to decode request body", zap.Error(err))
 		response.Fail(w, http.StatusBadRequest, fmt.Errorf("invalid request body"))
 		return
 	}
 
+	// Validate request fields.
 	if err := h.validator.Struct(req); err != nil {
 		h.logger.Warn("validation failed", zap.Error(err))
 		response.Fail(w, http.StatusBadRequest, fmt.Errorf("validation error: %s", err.Error()))
@@ -57,6 +68,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Create event in the service/repository.
 	id, err := h.service.CreateEvent(r.Context(), req.UserID, req.Title, req.Description, req.EventDate, req.ReminderAt)
 	if err != nil {
 		h.logger.Error("failed to create event",
@@ -68,7 +80,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Push reminder to the worker if ReminderAt is set.
+	// Push reminder to the worker if ReminderAt is set and in the future.
 	if req.ReminderAt != nil && req.ReminderAt.After(time.Now()) {
 		reminder := model.Reminder{
 			UserID:   req.UserID,
@@ -81,7 +93,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		case h.reminderCh <- reminder:
 			h.logger.Info("reminder scheduled", zap.String("user_id", req.UserID.String()), zap.Time("remind_at", *req.ReminderAt))
 		default:
-			// channel full, log warning
+			// Channel full, log warning.
 			h.logger.Warn("reminder channel is full, dropping reminder", zap.String("user_id", req.UserID.String()))
 		}
 	}

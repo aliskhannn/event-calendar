@@ -18,17 +18,26 @@ import (
 )
 
 //go:generate mockgen -source=handler.go -destination=../../../mocks/api/handlers/user/mock_user_service.go -package=mocks
+
+// userService defines the interface for user-related operations.
+// It is used internally by the Handler to perform registration and login logic.
 type userService interface {
+	// Create registers a new user with the given email, name, and password.
+	// Returns the newly created user's UUID or an error.
 	Create(ctx context.Context, email, name, password string) (uuid.UUID, error)
+
+	// GetByEmail validates the user's credentials and returns a JWT token if successful.
 	GetByEmail(ctx context.Context, email, password string) (string, error)
 }
 
+// Handler handles HTTP requests for user registration and login.
 type Handler struct {
 	service   userService
 	logger    *zap.Logger
 	validator *validator.Validate
 }
 
+// New creates a new Handler instance with the given user service, logger, and validator.
 func New(s userService, l *zap.Logger, v *validator.Validate) *Handler {
 	return &Handler{
 		service:   s,
@@ -37,17 +46,21 @@ func New(s userService, l *zap.Logger, v *validator.Validate) *Handler {
 	}
 }
 
+// RegisterRequest represents the JSON payload for registering a new user.
 type RegisterRequest struct {
 	Email    string `json:"email" validate:"required,email"`
 	Name     string `json:"name" validate:"required"`
 	Password string `json:"password" validate:"required,min=8"`
 }
 
+// LoginRequest represents the JSON payload for user login.
 type LoginRequest struct {
 	Email    string `json:"email" validate:"required,email"`
 	Password string `json:"password" validate:"required,min=8"`
 }
 
+// Register handles user registration requests.
+// It validates the request body, creates a new user, and responds with the user ID if successful.
 func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 	var req RegisterRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -78,6 +91,8 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 	response.Created(w, id)
 }
 
+// Login handles user login requests.
+// It validates the credentials, generates a JWT token, and returns it if authentication succeeds.
 func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	var req LoginRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {

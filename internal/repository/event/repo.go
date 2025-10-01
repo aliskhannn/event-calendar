@@ -18,16 +18,35 @@ var (
 	ErrEventNotFound = errors.New("event not found")
 )
 
+// Repository manages interactions with the events table in the PostgreSQL database.
+// It provides methods for creating, updating, deleting, archiving, and retrieving events.
 type Repository struct {
-	db *pgxpool.Pool
+	db *pgxpool.Pool // Database connection pool
 }
 
+// New creates a new Repository instance with the provided database connection pool.
+//
+// Parameters:
+//   - db: The PostgreSQL connection pool for database operations.
+//
+// Returns:
+//   - A pointer to the initialized Repository.
 func New(db *pgxpool.Pool) *Repository {
 	return &Repository{
 		db: db,
 	}
 }
 
+// CreateEvent inserts a new event into the events table and returns its ID.
+// It stores the user ID, event date, title, description, and optional reminder time.
+//
+// Parameters:
+//   - ctx: The context for the database operation.
+//   - event: The event data to be inserted.
+//
+// Returns:
+//   - The UUID of the created event.
+//   - An error if the insertion fails.
 func (r *Repository) CreateEvent(ctx context.Context, event model.Event) (uuid.UUID, error) {
 	query := `
 		INSERT INTO events (
@@ -46,6 +65,16 @@ func (r *Repository) CreateEvent(ctx context.Context, event model.Event) (uuid.U
 	return event.ID, nil
 }
 
+// UpdateEvent updates an existing event in the events table.
+// It updates the event date, title, description, reminder time, and updated_at timestamp
+// for the specified event ID and user ID.
+//
+// Parameters:
+//   - ctx: The context for the database operation.
+//   - event: The event data containing updated fields.
+//
+// Returns:
+//   - An error if the update fails or if the event is not found.
 func (r *Repository) UpdateEvent(ctx context.Context, event model.Event) error {
 	query := `
 		UPDATE events
@@ -70,6 +99,16 @@ func (r *Repository) UpdateEvent(ctx context.Context, event model.Event) error {
 	return nil
 }
 
+// DeleteEvent deletes an event from the events table.
+// It removes the event with the specified ID and user ID.
+//
+// Parameters:
+//   - ctx: The context for the database operation.
+//   - eventID: The UUID of the event to delete.
+//   - userID: The UUID of the user who owns the event.
+//
+// Returns:
+//   - An error if the deletion fails or if the event is not found.
 func (r *Repository) DeleteEvent(ctx context.Context, eventID, userID uuid.UUID) error {
 	query := `
    		DELETE FROM events
@@ -88,6 +127,14 @@ func (r *Repository) DeleteEvent(ctx context.Context, eventID, userID uuid.UUID)
 	return nil
 }
 
+// ArchiveOldEvents moves events older than the current date to the archived_events table
+// and deletes them from the events table. It uses a transaction to ensure atomicity.
+//
+// Parameters:
+//   - ctx: The context for the database operation.
+//
+// Returns:
+//   - An error if the archiving or deletion fails, or if the transaction cannot be committed.
 func (r *Repository) ArchiveOldEvents(ctx context.Context) error {
 	tx, err := r.db.BeginTx(ctx, pgx.TxOptions{})
 	if err != nil {
@@ -95,7 +142,7 @@ func (r *Repository) ArchiveOldEvents(ctx context.Context) error {
 	}
 	defer tx.Rollback(ctx)
 
-	// Insert into archive
+	// Insert old events into archived_events table.
 	_, err = tx.Exec(ctx, `
         INSERT INTO archived_events (id, user_id, event_date, title, description, created_at, updated_at)
         SELECT id, user_id, event_date, title, description, created_at, updated_at
@@ -106,12 +153,13 @@ func (r *Repository) ArchiveOldEvents(ctx context.Context) error {
 		return fmt.Errorf("failed to insert old events: %w", err)
 	}
 
-	// Delete old events
+	// Delete old events from events table.
 	_, err = tx.Exec(ctx, `DELETE FROM events WHERE event_date < CURRENT_DATE`)
 	if err != nil {
 		return fmt.Errorf("failed to delete old events: %w", err)
 	}
 
+	// Commit the transaction.
 	if err := tx.Commit(ctx); err != nil {
 		return fmt.Errorf("failed to commit transaction: %w", err)
 	}
@@ -119,6 +167,17 @@ func (r *Repository) ArchiveOldEvents(ctx context.Context) error {
 	return nil
 }
 
+// GetEventsForDay retrieves all events for a specific user on a given day.
+// Events are ordered by their event_date.
+//
+// Parameters:
+//   - ctx: The context for the database operation.
+//   - userID: The UUID of the user whose events are retrieved.
+//   - date: The date for which to retrieve events.
+//
+// Returns:
+//   - A slice of events for the specified day.
+//   - An error if the query fails or if no events are found.
 func (r *Repository) GetEventsForDay(ctx context.Context, userID uuid.UUID, date time.Time) ([]model.Event, error) {
 	query := `
 		SELECT id, user_id, event_date, title, description, reminder_at, created_at, updated_at
@@ -139,7 +198,6 @@ func (r *Repository) GetEventsForDay(ctx context.Context, userID uuid.UUID, date
 		if err := rows.Scan(&e.ID, &e.UserID, &e.EventDate, &e.Title, &e.Description, &e.ReminderAt, &e.CreatedAt, &e.UpdatedAt); err != nil {
 			return nil, err
 		}
-
 		events = append(events, e)
 	}
 
@@ -150,6 +208,17 @@ func (r *Repository) GetEventsForDay(ctx context.Context, userID uuid.UUID, date
 	return events, nil
 }
 
+// GetEventsForWeek retrieves all events for a specific user within a week starting from the given date.
+// The week is defined as 7 days before and 1 day after the specified date. Events are ordered by event_date.
+//
+// Parameters:
+//   - ctx: The context for the database operation.
+//   - userID: The UUID of the user whose events are retrieved.
+//   - date: The reference date for the week.
+//
+// Returns:
+//   - A slice of events for the specified week.
+//   - An error if the query fails or if no events are found.
 func (r *Repository) GetEventsForWeek(ctx context.Context, userID uuid.UUID, date time.Time) ([]model.Event, error) {
 	start := date.AddDate(0, 0, -7)
 	end := date.AddDate(0, 0, 1)
@@ -173,7 +242,6 @@ func (r *Repository) GetEventsForWeek(ctx context.Context, userID uuid.UUID, dat
 		if err := rows.Scan(&e.ID, &e.UserID, &e.EventDate, &e.Title, &e.Description, &e.ReminderAt, &e.CreatedAt, &e.UpdatedAt); err != nil {
 			return nil, err
 		}
-
 		events = append(events, e)
 	}
 
@@ -184,6 +252,17 @@ func (r *Repository) GetEventsForWeek(ctx context.Context, userID uuid.UUID, dat
 	return events, nil
 }
 
+// GetEventsForMonth retrieves all events for a specific user within a month starting from the first day of the given date's month.
+// The month ends before the first day of the next month. Events are ordered by event_date.
+//
+// Parameters:
+//   - ctx: The context for the database operation.
+//   - userID: The UUID of the user whose events are retrieved.
+//   - date: The reference date for the month.
+//
+// Returns:
+//   - A slice of events for the specified month.
+//   - An error if the query fails or if no events are found.
 func (r *Repository) GetEventsForMonth(ctx context.Context, userID uuid.UUID, date time.Time) ([]model.Event, error) {
 	start := time.Date(date.Year(), date.Month(), 1, 0, 0, 0, 0, date.Location())
 	end := date.AddDate(0, 1, 0)
@@ -207,7 +286,6 @@ func (r *Repository) GetEventsForMonth(ctx context.Context, userID uuid.UUID, da
 		if err := rows.Scan(&e.ID, &e.UserID, &e.EventDate, &e.Title, &e.Description, &e.ReminderAt, &e.CreatedAt, &e.UpdatedAt); err != nil {
 			return nil, err
 		}
-
 		events = append(events, e)
 	}
 

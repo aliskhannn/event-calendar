@@ -78,6 +78,11 @@ func (w *Worker) handleReminder(ctx context.Context, r model.Reminder) {
 	defer w.wg.Done()
 
 	duration := time.Until(r.RemindAt)
+	w.logger.Info("waiting for reminder",
+		zap.String("event", r.Message),
+		zap.Time("remind_at", r.RemindAt),
+		zap.Duration("wait_for", duration),
+	)
 	if duration > 0 {
 		select {
 		case <-time.After(duration):
@@ -94,9 +99,19 @@ func (w *Worker) handleReminder(ctx context.Context, r model.Reminder) {
 		return
 	}
 
+	w.logger.Info("sending reminder",
+		zap.String("to", user.Email),
+		zap.String("event", r.Message),
+	)
+
 	reminderMsg := fmt.Sprintf("🔔 Reminder: your event \"%s\" is coming up!", r.Message)
 	if err := w.sender.Send(user.Email, reminderMsg); err != nil {
 		w.logger.Warn("failed to send reminder message", zap.Error(err))
+	} else {
+		w.logger.Info("reminder sent successfully",
+			zap.String("to", user.Email),
+			zap.String("event", r.Message),
+		)
 	}
 }
 

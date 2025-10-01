@@ -1,7 +1,7 @@
 -- +goose Up
 -- +goose StatementBegin
 ALTER TABLE events
-    ADD COLUMN reminder_at TIMESTAMP NULL;
+    ADD COLUMN reminder_at TIMESTAMPTZ NULL;
 -- +goose StatementEnd
 
 -- +goose Down
