@@ -15,6 +15,7 @@ type eventRepo interface {
 	CreateEvent(ctx context.Context, event model.Event) (uuid.UUID, error)
 	UpdateEvent(ctx context.Context, event model.Event) error
 	DeleteEvent(ctx context.Context, eventID, userID uuid.UUID) error
+	ArchiveOldEvents(ctx context.Context) error
 	GetEventsForDay(ctx context.Context, userID uuid.UUID, date time.Time) ([]model.Event, error)
 	GetEventsForWeek(ctx context.Context, userID uuid.UUID, date time.Time) ([]model.Event, error)
 	GetEventsForMonth(ctx context.Context, userID uuid.UUID, date time.Time) ([]model.Event, error)
@@ -68,6 +69,15 @@ func (s *Service) DeleteEvent(ctx context.Context, eventID, userID uuid.UUID) er
 	err := s.eventRepo.DeleteEvent(ctx, eventID, userID)
 	if err != nil {
 		return fmt.Errorf("delete event: %w", err)
+	}
+
+	return nil
+}
+
+func (s *Service) ArchiveOldEvents(ctx context.Context) error {
+	err := s.eventRepo.ArchiveOldEvents(ctx)
+	if err != nil {
+		return fmt.Errorf("archive old events: %w", err)
 	}
 
 	return nil

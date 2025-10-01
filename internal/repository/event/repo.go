@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/google/uuid"
 
@@ -18,17 +18,11 @@ var (
 	ErrEventNotFound = errors.New("event not found")
 )
 
-type DB interface {
-	Exec(ctx context.Context, sql string, arguments ...any) (pgconn.CommandTag, error)
-	Query(ctx context.Context, sql string, optionsAndArgs ...any) (pgx.Rows, error)
-	QueryRow(ctx context.Context, sql string, optionsAndArgs ...any) pgx.Row
-}
-
 type Repository struct {
-	db DB
+	db *pgxpool.Pool
 }
 
-func New(db DB) *Repository {
+func New(db *pgxpool.Pool) *Repository {
 	return &Repository{
 		db: db,
 	}
@@ -88,6 +82,37 @@ func (r *Repository) DeleteEvent(ctx context.Context, eventID, userID uuid.UUID)
 
 	if cmdTag.RowsAffected() == 0 {
 		return ErrEventNotFound
+	}
+
+	return nil
+}
+
+func (r *Repository) ArchiveOldEvents(ctx context.Context) error {
+	tx, err := r.db.BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	// Insert into archive
+	_, err = tx.Exec(ctx, `
+        INSERT INTO archived_events (id, user_id, event_date, title, description, created_at, updated_at)
+        SELECT id, user_id, event_date, title, description, created_at, updated_at
+        FROM events
+        WHERE event_date < CURRENT_DATE
+    `)
+	if err != nil {
+		return fmt.Errorf("failed to insert old events: %w", err)
+	}
+
+	// Delete old events
+	_, err = tx.Exec(ctx, `DELETE FROM events WHERE event_date < CURRENT_DATE`)
+	if err != nil {
+		return fmt.Errorf("failed to delete old events: %w", err)
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
 	return nil
