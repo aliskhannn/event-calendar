@@ -31,13 +31,13 @@ func New(db *pgxpool.Pool) *Repository {
 func (r *Repository) CreateEvent(ctx context.Context, event model.Event) (uuid.UUID, error) {
 	query := `
 		INSERT INTO events (
-		    user_id, event_date, title, description
-		) VALUES ($1, $2, $3, $4)
+		    user_id, event_date, title, description, reminder_at
+		) VALUES ($1, $2, $3, $4, $5)
 		RETURNING id;
     `
 
 	err := r.db.QueryRow(
-		ctx, query, event.UserID, event.EventDate, event.Title, event.Description,
+		ctx, query, event.UserID, event.EventDate, event.Title, event.Description, event.ReminderAt,
 	).Scan(&event.ID)
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("failed to create event: %w", err)
@@ -53,11 +53,12 @@ func (r *Repository) UpdateEvent(ctx context.Context, event model.Event) error {
 		    event_date = $1,
 			title = $2,
 			description = $3,
+			reminder_at = $4,
 			updated_at = now()
-		WHERE id = $4 AND user_id = $5;
+		WHERE id = $5 AND user_id = $6;
 	`
 
-	cmdTag, err := r.db.Exec(ctx, query, event.EventDate, event.Title, event.Description, event.ID, event.UserID)
+	cmdTag, err := r.db.Exec(ctx, query, event.EventDate, event.Title, event.Description, event.ReminderAt, event.ID, event.UserID)
 	if err != nil {
 		return fmt.Errorf("failed to update event: %w", err)
 	}
@@ -120,7 +121,7 @@ func (r *Repository) ArchiveOldEvents(ctx context.Context) error {
 
 func (r *Repository) GetEventsForDay(ctx context.Context, userID uuid.UUID, date time.Time) ([]model.Event, error) {
 	query := `
-		SELECT id, user_id, event_date, title, description, created_at, updated_at
+		SELECT id, user_id, event_date, title, description, reminder_at, created_at, updated_at
 		FROM events
 		WHERE user_id = $1 AND event_date = $2
 		ORDER BY event_date
@@ -135,7 +136,7 @@ func (r *Repository) GetEventsForDay(ctx context.Context, userID uuid.UUID, date
 	var events []model.Event
 	for rows.Next() {
 		var e model.Event
-		if err := rows.Scan(&e.ID, &e.UserID, &e.EventDate, &e.Title, &e.Description, &e.CreatedAt, &e.UpdatedAt); err != nil {
+		if err := rows.Scan(&e.ID, &e.UserID, &e.EventDate, &e.Title, &e.Description, &e.ReminderAt, &e.CreatedAt, &e.UpdatedAt); err != nil {
 			return nil, err
 		}
 
@@ -154,7 +155,7 @@ func (r *Repository) GetEventsForWeek(ctx context.Context, userID uuid.UUID, dat
 	end := date.AddDate(0, 0, 1)
 
 	query := `
-		SELECT id, user_id, event_date, title, description, created_at, updated_at
+		SELECT id, user_id, event_date, title, description, reminder_at, created_at, updated_at
 		FROM events
 		WHERE user_id = $1 AND event_date >= $2 AND event_date < $3
 		ORDER BY event_date
@@ -169,7 +170,7 @@ func (r *Repository) GetEventsForWeek(ctx context.Context, userID uuid.UUID, dat
 	var events []model.Event
 	for rows.Next() {
 		var e model.Event
-		if err := rows.Scan(&e.ID, &e.UserID, &e.EventDate, &e.Title, &e.Description, &e.CreatedAt, &e.UpdatedAt); err != nil {
+		if err := rows.Scan(&e.ID, &e.UserID, &e.EventDate, &e.Title, &e.Description, &e.ReminderAt, &e.CreatedAt, &e.UpdatedAt); err != nil {
 			return nil, err
 		}
 
@@ -188,7 +189,7 @@ func (r *Repository) GetEventsForMonth(ctx context.Context, userID uuid.UUID, da
 	end := date.AddDate(0, 1, 0)
 
 	query := `
-		SELECT id, user_id, event_date, title, description, created_at, updated_at
+		SELECT id, user_id, event_date, title, description, reminder_at, created_at, updated_at
 		FROM events
 		WHERE user_id = $1 AND event_date >= $2 AND event_date < $3
 		ORDER BY event_date
@@ -203,7 +204,7 @@ func (r *Repository) GetEventsForMonth(ctx context.Context, userID uuid.UUID, da
 	var events []model.Event
 	for rows.Next() {
 		var e model.Event
-		if err := rows.Scan(&e.ID, &e.UserID, &e.EventDate, &e.Title, &e.Description, &e.CreatedAt, &e.UpdatedAt); err != nil {
+		if err := rows.Scan(&e.ID, &e.UserID, &e.EventDate, &e.Title, &e.Description, &e.ReminderAt, &e.CreatedAt, &e.UpdatedAt); err != nil {
 			return nil, err
 		}
 

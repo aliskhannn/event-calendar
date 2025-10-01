@@ -11,13 +11,15 @@ import (
 
 	"github.com/aliskhannn/calendar-service/internal/api/response"
 	"github.com/aliskhannn/calendar-service/internal/middlewares"
+	"github.com/aliskhannn/calendar-service/internal/model"
 )
 
 type CreateRequest struct {
-	UserID      uuid.UUID `json:"user_id" validate:"required"`
-	Title       string    `json:"title" validate:"required,min=3,max=255"`
-	Description string    `json:"description" validate:"max=1000"`
-	EventDate   time.Time `json:"event_date" validate:"required"`
+	UserID      uuid.UUID  `json:"user_id" validate:"required"`
+	Title       string     `json:"title" validate:"required,min=3,max=255"`
+	Description string     `json:"description" validate:"max=1000"`
+	EventDate   time.Time  `json:"event_date" validate:"required"`
+	ReminderAt  *time.Time `json:"reminder_at"`
 }
 
 func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
@@ -55,7 +57,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, err := h.service.CreateEvent(r.Context(), req.UserID, req.Title, req.Description, req.EventDate)
+	id, err := h.service.CreateEvent(r.Context(), req.UserID, req.Title, req.Description, req.EventDate, req.ReminderAt)
 	if err != nil {
 		h.logger.Error("failed to create event",
 			zap.String("user_id", req.UserID.String()),
@@ -64,6 +66,24 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		)
 		response.Fail(w, http.StatusInternalServerError, fmt.Errorf("internal server error"))
 		return
+	}
+
+	// Push reminder to the worker if ReminderAt is set.
+	if req.ReminderAt != nil && req.ReminderAt.After(time.Now()) {
+		reminder := model.Reminder{
+			UserID:   req.UserID,
+			EventID:  id,
+			Message:  req.Title,
+			RemindAt: *req.ReminderAt,
+		}
+
+		select {
+		case h.reminderCh <- reminder:
+			h.logger.Info("reminder scheduled", zap.String("user_id", req.UserID.String()), zap.Time("remind_at", *req.ReminderAt))
+		default:
+			// channel full, log warning
+			h.logger.Warn("reminder channel is full, dropping reminder", zap.String("user_id", req.UserID.String()))
+		}
 	}
 
 	response.Created(w, id)

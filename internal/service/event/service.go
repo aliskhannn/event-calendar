@@ -31,12 +31,13 @@ func New(r eventRepo) *Service {
 	}
 }
 
-func (s *Service) CreateEvent(ctx context.Context, userID uuid.UUID, title, description string, date time.Time) (uuid.UUID, error) {
+func (s *Service) CreateEvent(ctx context.Context, userID uuid.UUID, title, description string, date time.Time, reminderAt *time.Time) (uuid.UUID, error) {
 	event := model.Event{
 		UserID:      userID,
 		Title:       title,
 		Description: description,
 		EventDate:   date,
+		ReminderAt:  reminderAt,
 	}
 
 	id, err := s.eventRepo.CreateEvent(ctx, event)
@@ -47,13 +48,14 @@ func (s *Service) CreateEvent(ctx context.Context, userID uuid.UUID, title, desc
 	return id, nil
 }
 
-func (s *Service) UpdateEvent(ctx context.Context, eventID, userID uuid.UUID, title, description string, date time.Time) error {
+func (s *Service) UpdateEvent(ctx context.Context, eventID, userID uuid.UUID, title, description string, date time.Time, reminderAt *time.Time) error {
 	event := model.Event{
 		ID:          eventID,
 		UserID:      userID,
+		EventDate:   date,
 		Title:       title,
 		Description: description,
-		EventDate:   date,
+		ReminderAt:  reminderAt,
 		UpdatedAt:   time.Now(),
 	}
 
