@@ -24,6 +24,7 @@ var (
 //go:generate mockgen -source=service.go -destination=../../mocks/service/user/mock_user.go -package=mocks
 type userRepository interface {
 	CreateUser(ctx context.Context, user model.User) (uuid.UUID, error)
+	GetUserByID(ctx context.Context, id uuid.UUID) (*model.User, error)
 	GetUserByEmail(ctx context.Context, email string) (*model.User, error)
 }
 
@@ -67,6 +68,19 @@ func (s *Service) Create(ctx context.Context, email, name, password string) (uui
 	}
 
 	return id, nil
+}
+
+func (s *Service) GetByID(ctx context.Context, id uuid.UUID) (*model.User, error) {
+	user, err := s.userRepo.GetUserByID(ctx, id)
+	if err != nil {
+		if errors.Is(err, userrepo.ErrUserNotFound) {
+			return nil, ErrInvalidCredentials
+		}
+
+		return nil, fmt.Errorf("get user by id: %w", err)
+	}
+
+	return user, nil
 }
 
 func (s *Service) GetByEmail(ctx context.Context, email, password string) (string, error) {
