@@ -18,8 +18,8 @@ type userService interface {
 	GetByID(ctx context.Context, id uuid.UUID) (*model.User, error)
 }
 
-// notifier defines an interface for sending notifications through a channel.
-type notifier interface {
+// Sender defines an interface for sending notifications through a channel.
+type Sender interface {
 	// Send sends a notification message to the specified recipient.
 	Send(to string, msg string) error
 }
@@ -29,7 +29,7 @@ type notifier interface {
 type Worker struct {
 	ch          <-chan model.Reminder // channel with reminders
 	userService userService           // service to fetch user info
-	notifier    notifier              // interface to send notifications
+	sender      Sender                // interface to send notifications
 	logger      *zap.Logger           // structured logger
 	wg          sync.WaitGroup        // wait group for active reminder goroutines
 }
@@ -38,13 +38,13 @@ type Worker struct {
 func NewWorker(
 	ch <-chan model.Reminder,
 	userService userService,
-	notifier notifier,
+	sender Sender,
 	l *zap.Logger,
 ) *Worker {
 	return &Worker{
 		ch:          ch,
 		userService: userService,
-		notifier:    notifier,
+		sender:      sender,
 		logger:      l,
 	}
 }
@@ -95,7 +95,7 @@ func (w *Worker) handleReminder(ctx context.Context, r model.Reminder) {
 	}
 
 	reminderMsg := fmt.Sprintf("🔔 Reminder: your event \"%s\" is coming up!", r.Message)
-	if err := w.notifier.Send(user.Email, reminderMsg); err != nil {
+	if err := w.sender.Send(user.Email, reminderMsg); err != nil {
 		w.logger.Warn("failed to send reminder message", zap.Error(err))
 	}
 }
