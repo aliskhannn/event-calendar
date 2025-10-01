@@ -13,8 +13,8 @@ import (
 
 //go:generate mockgen -source=handler.go -destination=../../../mocks/api/handlers/event/mock_event_service.go -package=mocks
 type eventService interface {
-	CreateEvent(ctx context.Context, event model.Event) (uuid.UUID, error)
-	UpdateEvent(ctx context.Context, event model.Event) error
+	CreateEvent(ctx context.Context, userID uuid.UUID, title, description string, date time.Time) (uuid.UUID, error)
+	UpdateEvent(ctx context.Context, eventID, userID uuid.UUID, title, description string, date time.Time) error
 	DeleteEvent(ctx context.Context, eventID, userID uuid.UUID) error
 	GetEventsForDay(ctx context.Context, userID uuid.UUID, date time.Time) ([]model.Event, error)
 	GetEventsForWeek(ctx context.Context, userID uuid.UUID, date time.Time) ([]model.Event, error)

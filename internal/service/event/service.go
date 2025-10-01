@@ -30,7 +30,14 @@ func New(r eventRepo) *Service {
 	}
 }
 
-func (s *Service) CreateEvent(ctx context.Context, event model.Event) (uuid.UUID, error) {
+func (s *Service) CreateEvent(ctx context.Context, userID uuid.UUID, title, description string, date time.Time) (uuid.UUID, error) {
+	event := model.Event{
+		UserID:      userID,
+		Title:       title,
+		Description: description,
+		EventDate:   date,
+	}
+
 	id, err := s.eventRepo.CreateEvent(ctx, event)
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("create event: %w", err)
@@ -39,7 +46,16 @@ func (s *Service) CreateEvent(ctx context.Context, event model.Event) (uuid.UUID
 	return id, nil
 }
 
-func (s *Service) UpdateEvent(ctx context.Context, event model.Event) error {
+func (s *Service) UpdateEvent(ctx context.Context, eventID, userID uuid.UUID, title, description string, date time.Time) error {
+	event := model.Event{
+		ID:          eventID,
+		UserID:      userID,
+		Title:       title,
+		Description: description,
+		EventDate:   date,
+		UpdatedAt:   time.Now(),
+	}
+
 	err := s.eventRepo.UpdateEvent(ctx, event)
 	if err != nil {
 		return fmt.Errorf("update event: %w", err)

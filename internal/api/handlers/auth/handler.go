@@ -14,13 +14,14 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/aliskhannn/calendar-service/internal/api/response"
-	"github.com/aliskhannn/calendar-service/internal/model"
 	userrepo "github.com/aliskhannn/calendar-service/internal/repository/user"
 )
 
+// TODO: corrects mocks and tests
+//
 //go:generate mockgen -source=handler.go -destination=../../../mocks/api/handlers/user/mock_user_service.go -package=mocks
 type userService interface {
-	Create(ctx context.Context, user model.User) (uuid.UUID, error)
+	Create(ctx context.Context, email, name, password string) (uuid.UUID, error)
 	GetByEmail(ctx context.Context, email, password string) (string, error)
 }
 
@@ -57,13 +58,7 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user := model.User{
-		Email:    req.Email,
-		Name:     req.Name,
-		Password: req.Password,
-	}
-
-	id, err := h.service.Create(r.Context(), user)
+	id, err := h.service.Create(r.Context(), req.Email, req.Name, req.Password)
 	if err != nil {
 		if errors.Is(err, usersvc.ErrUserAlreadyExists) {
 			h.logger.Warn("user already exists", zap.Error(err))

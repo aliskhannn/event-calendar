@@ -39,9 +39,9 @@ func New(userRepo userRepository, config *config.Config) *Service {
 	}
 }
 
-func (s *Service) Create(ctx context.Context, user model.User) (uuid.UUID, error) {
+func (s *Service) Create(ctx context.Context, email, name, password string) (uuid.UUID, error) {
 	// Check if user already exists.
-	_, err := s.userRepo.GetUserByEmail(ctx, user.Email)
+	_, err := s.userRepo.GetUserByEmail(ctx, email)
 	if err == nil {
 		return uuid.Nil, ErrUserAlreadyExists
 	}
@@ -50,12 +50,16 @@ func (s *Service) Create(ctx context.Context, user model.User) (uuid.UUID, error
 	}
 
 	// Hash password.
-	hash, err := hashPassword(user.Password)
+	hash, err := hashPassword(password)
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("hash password: %w", err)
 	}
 
-	user.Password = hash
+	user := model.User{
+		Email:    email,
+		Name:     name,
+		Password: hash,
+	}
 
 	id, err := s.userRepo.CreateUser(ctx, user)
 	if err != nil {

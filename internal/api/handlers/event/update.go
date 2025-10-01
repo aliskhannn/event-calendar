@@ -14,7 +14,6 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/aliskhannn/calendar-service/internal/api/response"
-	"github.com/aliskhannn/calendar-service/internal/model"
 	eventrepo "github.com/aliskhannn/calendar-service/internal/repository/event"
 )
 
@@ -60,16 +59,7 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	event := model.Event{
-		ID:          eventID,
-		UserID:      userID,
-		Title:       req.Title,
-		Description: req.Description,
-		EventDate:   req.EventDate,
-		UpdatedAt:   time.Now(),
-	}
-
-	if err := h.service.UpdateEvent(r.Context(), event); err != nil {
+	if err := h.service.UpdateEvent(r.Context(), eventID, userID, req.Title, req.Description, req.EventDate); err != nil {
 		if errors.Is(err, eventrepo.ErrEventNotFound) {
 			h.logger.Info("event not found", zap.String("eventID", eventID.String()))
 			response.Fail(w, http.StatusNotFound, fmt.Errorf("event not found"))

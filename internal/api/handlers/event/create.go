@@ -11,7 +11,6 @@ import (
 
 	"github.com/aliskhannn/calendar-service/internal/api/response"
 	"github.com/aliskhannn/calendar-service/internal/middlewares"
-	"github.com/aliskhannn/calendar-service/internal/model"
 )
 
 type CreateRequest struct {
@@ -56,14 +55,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	event := model.Event{
-		UserID:      req.UserID,
-		Title:       req.Title,
-		Description: req.Description,
-		EventDate:   req.EventDate,
-	}
-
-	id, err := h.service.CreateEvent(r.Context(), event)
+	id, err := h.service.CreateEvent(r.Context(), req.UserID, req.Title, req.Description, req.EventDate)
 	if err != nil {
 		h.logger.Error("failed to create event",
 			zap.String("user_id", req.UserID.String()),
