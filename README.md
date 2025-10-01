@@ -1,7 +1,7 @@
-# Calendar Service
+## Calendar Service
 
 A small HTTP server for managing calendar events with JWT-based authentication and bcrypt-secured user registration.
-The service provides CRUD operations for events, as well as endpoints for querying daily, weekly, and monthly schedules.
+The service provides CRUD operations for events, daily/weekly/monthly queries, email reminders, and background archiving.
 
 ---
 
@@ -10,7 +10,9 @@ The service provides CRUD operations for events, as well as endpoints for queryi
 * User authentication and registration (`JWT + bcrypt`)
 * CRUD operations for calendar events
 * Query events by day, week, or month
-* Middleware logging of all requests
+* **Email reminders** via background worker
+* **Automatic archiving** of old events every configurable interval
+* Middleware logging of all requests (**asynchronous logger**)
 * PostgreSQL persistence with migrations (via `goose`)
 * Configurable via `.env`
 * Dockerized for easy setup
@@ -34,9 +36,12 @@ The service provides CRUD operations for events, as well as endpoints for queryi
 │   ├── config               # Config loader
 │   ├── logger               # Logger setup (zap)
 │   ├── middlewares          # Middleware (auth, logging)
-│   ├── model                # Domain models (User, Event, etc.)
+│   ├── model                # Domain models (User, Event, Reminder, etc.)
 │   ├── repository           # Data access layer
-│   └── service              # Business logic layer
+│   ├── service              # Business logic layer
+│   └── worker               # Background workers
+│       ├── archiver         # Archiving old events periodically
+│       └── reminder         # Sending event reminders via email
 ├── migrations               # SQL migrations
 ├── go.mod                   
 ├── go.sum                   
@@ -55,96 +60,51 @@ The service provides CRUD operations for events, as well as endpoints for queryi
 #### `POST /api/user/register`
 
 Register a new user.
-**Request (JSON):**
-
-```json
-{
-  "name": "Alice",
-  "email": "alice@example.com",
-  "password": "strongpassword"
-}
-```
 
 #### `POST /api/user/login`
 
 Authenticate and receive a JWT token.
-**Request (JSON):**
-
-```json
-{
-  "email": "alice@example.com",
-  "password": "strongpassword"
-}
-```
-
-**Response:**
-
-```json
-{
-  "token": "Bearer <jwt_token>"
-}
-```
 
 ---
 
-### Protected routes (require `Authorization: Bearer <token>` header)
+### Protected routes (require `Authorization: Bearer <token>`)
 
 #### `POST /api/events/`
 
-Create an event.
-**Request (JSON):**
-
-```json
-{
-  "title": "New Year Party",
-  "description": "Celebration with friends",
-  "event_date": "2023-12-30T00:00:00Z"
-}
-```
+Create an event (optionally with `reminder_at` to schedule an email reminder).
 
 #### `PUT /api/events/{id}`
 
 Update an existing event.
-**Path parameter:**
-
-* `id` — Event UUID
-
-**Request (JSON):**
-
-```json
-{
-  "title": "Updated Party Title",
-  "description": "Changed description",
-  "event_date": "2023-12-30T00:00:00Z"
-}
-```
 
 #### `DELETE /api/events/{id}`
 
 Delete an event by ID.
-**Path parameter:**
 
-* `id` — Event UUID
+#### Event Queries
+
+* `GET /api/events/day?date=YYYY-MM-DD`
+* `GET /api/events/week?date=YYYY-MM-DD`
+* `GET /api/events/month?date=YYYY-MM-DD`
 
 ---
 
-### Event Queries
+## Background Workers
 
-#### `GET /api/events/day?date=2023-12-31`
+### Reminder Worker
 
-Get events for a specific day.
+* Listens to a channel of `Reminder` tasks.
+* Sends an email notification at the scheduled time.
 
-#### `GET /api/events/week?date=2023-12-31`
+### Archiver Worker
 
-Get events for the week containing the given date.
+* Runs periodically (configurable interval).
+* Moves old events to an archive table to keep the main events table clean.
 
-#### `GET /api/events/month?date=2023-12-31`
+### Async Logger
 
-Get events for the month containing the given date.
-
-**Query parameters:**
-
-* `date` — required, `YYYY-MM-DD`
+* HTTP handlers no longer write to stdout directly.
+* Logs are pushed into a channel and written by a separate goroutine.
 
 ---
 
@@ -159,11 +119,17 @@ cd calendar-service
 
 ### 2. Configure environment
 
-Copy `.env.example` to `.env` and adjust values:
+Copy `.env.example` to `.env` and set values:
 
 ```bash
 cp .env.example .env
 ```
+
+**Notes:**
+
+* SMTP credentials: create an account on Mailtrap (or any SMTP provider) and copy SMTP host, port, username, password, and sender email into `.env`.
+* JWT secret: set a long random string.
+* Database credentials: set host, port, username, password, database name.
 
 ### 3. Run with Docker
 
@@ -171,7 +137,7 @@ cp .env.example .env
 make docker-up
 ```
 
-To stop and remove containers:
+Stop and remove containers:
 
 ```bash
 make docker-down
@@ -180,7 +146,6 @@ make docker-down
 ### 4. Run tests
 
 ```bash
-# Run unit tests
 make test
 ```
 
