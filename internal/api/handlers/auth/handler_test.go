@@ -43,7 +43,7 @@ func TestHandler_Register_Success(t *testing.T) {
 
 	mockID := uuid.New()
 	mockService.EXPECT().
-		Create(gomock.Any(), gomock.Any()).
+		Create(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(mockID, nil)
 
 	h.Register(w, req)
@@ -68,7 +68,7 @@ func TestHandler_Register_UserAlreadyExists(t *testing.T) {
 	w := httptest.NewRecorder()
 
 	mockService.EXPECT().
-		Create(gomock.Any(), gomock.Any()).
+		Create(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(uuid.Nil, user.ErrUserAlreadyExists)
 
 	h.Register(w, req)

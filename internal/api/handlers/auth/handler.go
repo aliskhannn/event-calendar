@@ -17,8 +17,6 @@ import (
 	userrepo "github.com/aliskhannn/calendar-service/internal/repository/user"
 )
 
-// TODO: corrects mocks and tests
-//
 //go:generate mockgen -source=handler.go -destination=../../../mocks/api/handlers/user/mock_user_service.go -package=mocks
 type userService interface {
 	Create(ctx context.Context, email, name, password string) (uuid.UUID, error)

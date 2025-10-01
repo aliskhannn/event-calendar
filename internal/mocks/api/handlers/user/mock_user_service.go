@@ -10,8 +10,6 @@ import (
 
 	gomock "github.com/golang/mock/gomock"
 	uuid "github.com/google/uuid"
-
-	model "github.com/aliskhannn/calendar-service/internal/model"
 )
 
 // MockuserService is a mock of userService interface.
@@ -38,18 +36,18 @@ func (m *MockuserService) EXPECT() *MockuserServiceMockRecorder {
 }
 
 // Create mocks base method.
-func (m *MockuserService) Create(ctx context.Context, user model.User) (uuid.UUID, error) {
+func (m *MockuserService) Create(ctx context.Context, email, name, password string) (uuid.UUID, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Create", ctx, user)
+	ret := m.ctrl.Call(m, "Create", ctx, email, name, password)
 	ret0, _ := ret[0].(uuid.UUID)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Create indicates an expected call of Create.
-func (mr *MockuserServiceMockRecorder) Create(ctx, user interface{}) *gomock.Call {
+func (mr *MockuserServiceMockRecorder) Create(ctx, email, name, password interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockuserService)(nil).Create), ctx, user)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockuserService)(nil).Create), ctx, email, name, password)
 }
 
 // GetByEmail mocks base method.

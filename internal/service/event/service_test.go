@@ -20,17 +20,24 @@ func TestService_CreateEvent(t *testing.T) {
 	mockRepo := eventrepomocks.NewMockeventRepo(ctrl)
 	svc := New(mockRepo)
 
-	ev := model.Event{
-		EventDate: time.Now(),
-		Title:     "Test Event",
-	}
+	userID := uuid.New()
+	date := time.Now()
+	title := "Test Event"
+	description := "Some description"
 	mockID := uuid.New()
 
+	expectedEvent := model.Event{
+		UserID:      userID,
+		Title:       title,
+		Description: description,
+		EventDate:   date,
+	}
+
 	mockRepo.EXPECT().
-		CreateEvent(gomock.Any(), ev).
+		CreateEvent(gomock.Any(), expectedEvent).
 		Return(mockID, nil)
 
-	id, err := svc.CreateEvent(context.Background(), ev)
+	id, err := svc.CreateEvent(context.Background(), userID, title, description, date)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -46,13 +53,18 @@ func TestService_UpdateEvent(t *testing.T) {
 	mockRepo := eventrepomocks.NewMockeventRepo(ctrl)
 	svc := New(mockRepo)
 
-	ev := model.Event{EventDate: time.Now()}
+	eventID := uuid.New()
+	userID := uuid.New()
+	title := "Updated Event"
+	description := "Updated description"
+	date := time.Now()
 
 	mockRepo.EXPECT().
-		UpdateEvent(gomock.Any(), ev).
+		UpdateEvent(gomock.Any(), gomock.Any()).
 		Return(nil)
 
-	if err := svc.UpdateEvent(context.Background(), ev); err != nil {
+	err := svc.UpdateEvent(context.Background(), eventID, userID, title, description, date)
+	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 }

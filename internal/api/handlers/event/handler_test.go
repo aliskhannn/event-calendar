@@ -48,7 +48,7 @@ func TestHandler_Create_Success(t *testing.T) {
 	w := httptest.NewRecorder()
 
 	mockService.EXPECT().
-		CreateEvent(gomock.Any(), gomock.Any()).
+		CreateEvent(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(uuid.New(), nil)
 
 	h.Create(w, req)
@@ -147,7 +147,7 @@ func TestHandler_Update_Success(t *testing.T) {
 	w := httptest.NewRecorder()
 
 	mockService.EXPECT().
-		UpdateEvent(gomock.Any(), gomock.Any()).
+		UpdateEvent(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(nil)
 
 	h.Update(w, req)
@@ -180,7 +180,7 @@ func TestHandler_Update_NotFound(t *testing.T) {
 	w := httptest.NewRecorder()
 
 	mockService.EXPECT().
-		UpdateEvent(gomock.Any(), gomock.Any()).
+		UpdateEvent(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(event.ErrEventNotFound)
 
 	h.Update(w, req)
